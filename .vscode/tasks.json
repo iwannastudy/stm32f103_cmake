@@ -1,0 +1,49 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+            "label": "Clean Builds",
+            "type": "shell",
+            "command": "cmd",
+            "args": [
+                "/c", "del /q /f build\\Debug\\stm32f103_cmake.elf build\\Debug\\stm32f103_cmake.bin"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "清除上一次生成的 ELF 和 BIN 文件"
+        },
+		{
+			"type": "cmake",
+			"label": "CMake: Build",
+			"command": "build",
+			"targets": [
+				"all"
+			],
+			"preset": "${command:cmake.activeBuildPresetName}",
+			"group": "build",
+			"dependsOn": "Clean Builds",
+			"problemMatcher": [],
+			"detail": "CMake 模板 生成 任务"
+		},
+        {
+            "label": "OpenOCD: Flash STM32F10x",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f", "interface/jlink.cfg", // 替换为你的调试器配置文件
+                "-f", "target/stm32f1x.cfg", // 替换为你的目标芯片配置文件
+				"-c", "program build/Debug/stm32f103_cmake.bin 0x08000000 verify reset exit",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+			"dependsOn": "CMake: Build",
+            "problemMatcher": [],
+            "detail": "使用 OpenOCD JLink 烧录 STM32F10x"
+        }
+	]
+}

@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug (JLink)",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/Debug/stm32f103_cmake.elf", // 替换为你的 ELF 文件路径
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "device": "STM32F103C8", // 替换为你的具体芯片型号
+            "configFiles": [
+                "interface/jlink.cfg", // 调试器配置文件
+                "target/stm32f1x.cfg"  // 目标芯片配置文件
+            ],
+            "runToEntryPoint": "main",
+            "svdFile": "${workspaceFolder}/STM32F103xx.svd", // 可选：提供 SVD 文件以支持寄存器查看
+            "preLaunchTask": "OpenOCD: Flash STM32F10x", // 可选：启动 OpenOCD 的任务
+            "postRestartCommands": [
+                "load" // 在调试器重新启动时加载程序
+            ],
+            "showDevDebugOutput": "none"
+        }
+    ]
+}
