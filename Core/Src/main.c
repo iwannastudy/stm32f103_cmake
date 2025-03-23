@@ -18,13 +18,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "iwdg.h"
 #include "usart.h"
 #include "gpio.h"
-#include "common.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "common.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,11 +63,13 @@ void watchdog_task(void *pvParameters)
 {
     while(1)
     {
-        //xEventGroupWaitBits(evtGroup, EV_NET_DEA_RUN|EV_UI_RUN,
-        //                    pdTRUE, pdTRUE, portMAX_DELAY);
-        //IWDG_Feed();
-        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-        vTaskDelay(1000);
+        for(uint8_t i = 3; i > 0; i--) 
+        {
+            LED_ON; vTaskDelay(100);
+            LED_OFF; vTaskDelay(100);
+        }
+
+        watch_dog_check_feed();
     }
 }
 
@@ -80,6 +82,9 @@ void systat_task(void *pvParameters)
 {
     uint32_t remainOSHeapBytes = 0;
     char pcWriteBuffer[300];
+
+    uint32_t wdgEvent = watch_dog_register();
+    CHECKPOINTA("systat_task start, get watch dog event id: 0x%X", wdgEvent);
     
     while(1)
     {
@@ -97,6 +102,8 @@ void systat_task(void *pvParameters)
         CHECKPOINTA("FreeRTOS remain heap size: %d", remainOSHeapBytes);
         CHECKPOINTA("=================================================");
         CHECKPOINTA("\r\n\r\n");
+
+        watch_dog_feed_event(wdgEvent);
         vTaskDelay(5000);
     }
 }
@@ -132,6 +139,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -139,7 +147,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  xTaskCreate(watchdog_task, "watchdog", 48, NULL, SYS_CTRL_PORIRITY, &watchdogTH);
+  xTaskCreate(watchdog_task, "wdg", 128, NULL, SYS_CTRL_PORIRITY, &watchdogTH);
 
   //xTaskCreate(networkDeamonTask, "networkDeamon", 512, NULL, DEAMON_TASK, &netDeamonTH);
   
@@ -168,10 +176,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;

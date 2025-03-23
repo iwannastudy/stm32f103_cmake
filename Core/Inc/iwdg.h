@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    gpio.h
+  * @file    iwdg.h
   * @brief   This file contains all the function prototypes for
-  *          the gpio.c file
+  *          the iwdg.c file
   ******************************************************************************
   * @attention
   *
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __GPIO_H__
-#define __GPIO_H__
+#ifndef __IWDG_H__
+#define __IWDG_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,21 +32,26 @@ extern "C" {
 
 /* USER CODE END Includes */
 
+extern IWDG_HandleTypeDef hiwdg;
+
 /* USER CODE BEGIN Private defines */
-#define LED_OFF                 HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET)
-#define LED_ON                  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET)
-#define LED_BLINK               HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin)
 
 /* USER CODE END Private defines */
 
-void MX_GPIO_Init(void);
+void MX_IWDG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+uint32_t watch_dog_register(void);
+void watch_dog_unregister(uint32_t event);
+void watch_dog_feed_event(uint32_t event);
+void watch_dog_check_feed(void);
 
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ GPIO_H__ */
+
+#endif /* __IWDG_H__ */
 
