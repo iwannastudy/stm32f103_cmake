@@ -2,14 +2,16 @@
     "configurations": [
         {
             "name": "STM32",
-            "compilerPath": "arm-none-eabi-gcc.exe",
+            "compilerPath": "E:\\guntoolchain\\GNU Arm Embedded Toolchain\\10 2020-q4-major\\bin\\arm-none-eabi-gcc.exe",
             "intelliSenseMode": "gcc-arm",
             "includePath": [
                 "${workspaceFolder}/Core/Inc",
                 "${workspaceFolder}/Drivers/CMSIS/Include",
                 "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F1xx/Include",
                 "${workspaceFolder}/Drivers/STM32F1xx_HAL_Driver/Inc",
-                "${workspaceFolder}/Drivers/STM32F1xx_HAL_Driver/Inc/Legacy"
+                "${workspaceFolder}/Drivers/STM32F1xx_HAL_Driver/Inc/Legacy",
+                "${workspaceFolder}/FreeRTOS/include",
+                "${workspaceFolder}/FreeRTOS/portable/GCC/ARM_CM3"
             ],
             "defines": [
                 "STM32F103xB",

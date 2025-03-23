@@ -45,7 +45,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+TaskHandle_t netDeamonTH; 
+TaskHandle_t netconfTH;
+TaskHandle_t systatTH;
+TaskHandle_t watchdogTH;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -56,7 +59,47 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void watchdog_task(void *pvParameters)
+{
+    while(1)
+    {
+        //xEventGroupWaitBits(evtGroup, EV_NET_DEA_RUN|EV_UI_RUN,
+        //                    pdTRUE, pdTRUE, portMAX_DELAY);
+        //IWDG_Feed();
+        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+        vTaskDelay(1000);
+    }
+}
 
+void vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName )
+{
+    CHECKPOINTA("task:%s stack is overflowed!", pcTaskName);
+}
+
+void systat_task(void *pvParameters)
+{
+    uint32_t remainOSHeapBytes = 0;
+    char pcWriteBuffer[300];
+    
+    while(1)
+    {
+        CHECKPOINTA("\r\n\r\n");
+        CHECKPOINTA("=================================================");
+        CHECKPOINTA("taskName\ttaskState  priority  freeStack  taskNum");
+        vTaskList(pcWriteBuffer);
+        CHECKPOINTA("%s\r\n", pcWriteBuffer);
+        
+        //CHECKPOINTA("\r\n taskName  runningCount  usage\r\n");
+        //vTaskGetRunTimeStats(pcWriteBuffer);
+        //CHECKPOINTA("%s\r\n", pcWriteBuffer);
+        
+        remainOSHeapBytes = xPortGetFreeHeapSize();
+        CHECKPOINTA("FreeRTOS remain heap size: %d", remainOSHeapBytes);
+        CHECKPOINTA("=================================================");
+        CHECKPOINTA("\r\n\r\n");
+        vTaskDelay(5000);
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -95,11 +138,17 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  xTaskCreate(watchdog_task, "watchdog", 48, NULL, SYS_CTRL_PORIRITY, &watchdogTH);
+
+  //xTaskCreate(networkDeamonTask, "networkDeamon", 512, NULL, DEAMON_TASK, &netDeamonTH);
+  
+  xTaskCreate(systat_task, "systat", 192, NULL, LOWEST_PORIORIT, &systatTH);
+
+  vTaskStartScheduler();
+
   while (1)
   {
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    CHECKPOINTA("Hello World\r\n");
-    HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -200,6 +249,7 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+     ERRORPOINT("Wrong parameters value: file %s on line %d\r\n", file, line);
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

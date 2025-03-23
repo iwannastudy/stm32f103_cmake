@@ -2,18 +2,26 @@
 #define __COMMON_H__
 
 #include "usart.h"
-// #include "FreeRTOS.h"
-// #include "task.h"
-// #include "queue.h"
-// #include "event_groups.h"
-// #include "semphr.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "event_groups.h"
+#include "semphr.h"
 
-#define SYSTEM_CTRL                 6
-#define DEAMON_TASK                 5
-#define USER_INTERACT               4
-#define SENSORS_MODULES             3
-#define DISPLAY_UI                  2
-#define LOWEST_TASK                 1
+// system control
+#define SYS_CTRL_PORIRITY           (configMAX_PRIORITIES-1)
+
+// user interaction
+#define USER_INTRA_PORIORITY        (SYS_CTRL_PORIRITY-1)
+
+// sensors and modules
+#define SENS_MODS_PORIORITY         (USER_INTRA_PORIORITY-1)
+
+// tasks that no requirement for real-time
+#define NORMAL_PORIORIT             (SENS_MODS_PORIORITY-1)
+
+// tasks that with the lowest
+#define LOWEST_PORIORIT             1
 
 #define CHECKPOINTA(format, ...)    UartPrintf(""format"\r\n", ##__VA_ARGS__)
 
@@ -41,7 +49,6 @@ typedef enum
     EV_MAX           = 0x800000
 }event_bits;
 
-// extern SemaphoreHandle_t printfMutex;
 // extern EventGroupHandle_t evtGroup;
 
 
