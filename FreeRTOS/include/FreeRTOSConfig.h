@@ -98,7 +98,7 @@ extern void UartPrintf(const char *fmt, ...);
 #define configTICK_RATE_HZ						(1000)                  //时钟节拍频率，这里设置为1000，周期就是1ms
 #define configMAX_PRIORITIES					(8)                     //可使用的最大优先级
 #define configMINIMAL_STACK_SIZE				((unsigned short)32)    //空闲任务使用的堆栈大小, word
-#define configMAX_TASK_NAME_LEN					(20)                    //任务名字字符串长度
+#define configMAX_TASK_NAME_LEN					(12)                    //任务名字字符串长度
 
 #define configUSE_16_BIT_TICKS					0                       //系统节拍计数器变量数据类型，
                                                                         //1表示为16位无符号整形，0表示为32位无符号整形

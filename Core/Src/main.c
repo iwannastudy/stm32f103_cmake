@@ -84,7 +84,8 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName 
 void systat_task(void *pvParameters)
 {
     (void)pvParameters; // Suppress unused parameter warning
-    uint32_t remainOSHeapBytes = 0;
+    size_t remainOSHeapBytes = 0;
+    size_t minOSHeapBytes = 0;
     char pcWriteBuffer[300];
 
     uint32_t wdgEvent = watch_dog_register();
@@ -94,7 +95,7 @@ void systat_task(void *pvParameters)
     {
         CHECKPOINTA("\r\n\r\n");
         CHECKPOINTA("=================================================");
-        CHECKPOINTA("taskName\ttaskState  priority  freeStack  taskNum");
+        CHECKPOINTA("taskName  taskState  priority  freeStack  taskNum");
         vTaskList(pcWriteBuffer);
         CHECKPOINTA("%s\r\n", pcWriteBuffer);
         
@@ -103,7 +104,9 @@ void systat_task(void *pvParameters)
         //CHECKPOINTA("%s\r\n", pcWriteBuffer);
         
         remainOSHeapBytes = xPortGetFreeHeapSize();
+        minOSHeapBytes = xPortGetMinimumEverFreeHeapSize();
         CHECKPOINTA("FreeRTOS remain heap size: %d", remainOSHeapBytes);
+        CHECKPOINTA("FreeRTOS minimum ever heap size: %d", minOSHeapBytes);
         CHECKPOINTA("=================================================");
         CHECKPOINTA("\r\n\r\n");
 
@@ -151,11 +154,11 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  xTaskCreate(watchdog_task, "wdg", 128, NULL, SYS_CTRL_PORIRITY, &watchdogTH);
+  xTaskCreate(watchdog_task, "wdg", 64, NULL, SYS_CTRL_PORIRITY, &watchdogTH);
 
   //xTaskCreate(networkDeamonTask, "networkDeamon", 512, NULL, DEAMON_TASK, &netDeamonTH);
   
-  xTaskCreate(systat_task, "systat", 192, NULL, LOWEST_PORIORIT, &systatTH);
+  xTaskCreate(systat_task, "systat", 256, NULL, LOWEST_PORIORIT, &systatTH);
 
   vTaskStartScheduler();
 

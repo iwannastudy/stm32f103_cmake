@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+        // 需要修改jlink.cfg文件，增加“transport select swd”以使用swd
         // {
         //     "name": "Cortex Debug (JLink OpenOCD)",
         //     "cwd": "${workspaceFolder}",
@@ -21,6 +22,7 @@
         //     ],
         //     "showDevDebugOutput": "none"
         // },
+        // 需要安装jlink官方驱动，并将 JLink.exe 的路径添加到系统 PATH 中
         {
             "name": "Cortex Debug (JLinkGDBServer)",
             "cwd": "${workspaceFolder}",
