@@ -105,7 +105,7 @@ void watch_dog_unregister(uint32_t event)
 {
     if(!wdgEventGroup)
     {
-        return 0;
+        return;
     }
 
     if(eventMutex)

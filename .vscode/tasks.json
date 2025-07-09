@@ -28,22 +28,41 @@
 			"problemMatcher": [],
 			"detail": "CMake 模板 生成 任务"
 		},
+        // 原 OpenOCD 烧录任务，已注释保留
+        // {
+        //     "label": "OpenOCD: Flash STM32F10x",
+        //     "type": "shell",
+        //     "command": "openocd",
+        //     "args": [
+        //         "-f", "interface/jlink.cfg",
+        //         "-f", "target/stm32f1x.cfg",
+        //         "-c", "program build/Debug/stm32f103_cmake.bin 0x08000000 verify reset exit",
+        //     ],
+        //     "group": {
+        //         "kind": "build",
+        //         "isDefault": false
+        //     },
+        //     "dependsOn": "CMake: Build",
+        //     "problemMatcher": [],
+        //     "detail": "使用 OpenOCD JLink 烧录 STM32F10x"
+        // },
         {
-            "label": "OpenOCD: Flash STM32F10x",
+            "label": "JLink: Flash STM32F10x",
             "type": "shell",
-            "command": "openocd",
+            "command": "JLink.exe",
             "args": [
-                "-f", "interface/jlink.cfg", // 替换为你的调试器配置文件
-                "-f", "target/stm32f1x.cfg", // 替换为你的目标芯片配置文件
-				"-c", "program build/Debug/stm32f103_cmake.bin 0x08000000 verify reset exit",
+                "-device", "STM32F103C8",
+                "-if", "SWD",
+                "-speed", "4000",
+                "-CommanderScript", "${workspaceFolder}/jlink_flash.script"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": false
             },
-			"dependsOn": "CMake: Build",
+            "dependsOn": "CMake: Build",
             "problemMatcher": [],
-            "detail": "使用 OpenOCD JLink 烧录 STM32F10x"
+            "detail": "使用 JLink 烧录 STM32F10x (需准备 jlink_flash.script)"
         }
 	]
 }

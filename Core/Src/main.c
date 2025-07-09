@@ -61,6 +61,8 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 void watchdog_task(void *pvParameters)
 {
+    (void)pvParameters; // Suppress unused parameter warning
+    
     while(1)
     {
         for(uint8_t i = 3; i > 0; i--) 
@@ -75,11 +77,13 @@ void watchdog_task(void *pvParameters)
 
 void vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName )
 {
+    (void)xTask; // Suppress unused parameter warning
     CHECKPOINTA("task:%s stack is overflowed!", pcTaskName);
 }
 
 void systat_task(void *pvParameters)
 {
+    (void)pvParameters; // Suppress unused parameter warning
     uint32_t remainOSHeapBytes = 0;
     char pcWriteBuffer[300];
 

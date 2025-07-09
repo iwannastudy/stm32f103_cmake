@@ -2,7 +2,7 @@
     "configurations": [
         {
             "name": "STM32",
-            "compilerPath": "E:\\guntoolchain\\GNU Arm Embedded Toolchain\\10 2020-q4-major\\bin\\arm-none-eabi-gcc.exe",
+            "compilerPath": "D:\\guntoolchain\\GNU Arm Embedded Toolchain\\10 2020-q4-major\\bin\\arm-none-eabi-gcc.exe",
             "intelliSenseMode": "gcc-arm",
             "includePath": [
                 "${workspaceFolder}/Core/Inc",
