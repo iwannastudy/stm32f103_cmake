@@ -23,6 +23,8 @@
 /* Includes */
 #include <errno.h>
 #include <stdint.h>
+#include "FreeRTOS.h"
+#include "task.h"
 
 /**
  * Pointer to the current high watermark of the heap usage
@@ -72,8 +74,21 @@ void *_sbrk(ptrdiff_t incr)
     return (void *)-1;
   }
 
-  prev_heap_end = __sbrk_heap_end;
-  __sbrk_heap_end += incr;
+    prev_heap_end = __sbrk_heap_end;
+    __sbrk_heap_end += incr;
 
   return (void *)prev_heap_end;
+}
+
+// 实现newlib的线程安全malloc锁定和解锁钩子函数
+// 这些函数用于在多线程环境中保护malloc的内部状态，防止数据竞争
+// FreeRTOS的任务调度器提供了临界区的进入和退出函数
+void __malloc_lock(struct _reent *reent)
+{
+    taskENTER_CRITICAL();
+}
+
+void __malloc_unlock(struct _reent *reent)
+{
+    taskEXIT_CRITICAL();
 }
