@@ -25,7 +25,10 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#include "common.h"
 
+
+#if 1
 /**
  * Pointer to the current high watermark of the heap usage
  */
@@ -85,10 +88,60 @@ void *_sbrk(ptrdiff_t incr)
 // FreeRTOS的任务调度器提供了临界区的进入和退出函数
 void __malloc_lock(struct _reent *reent)
 {
+    CHECKPOINTB("malloc lock called!");
     taskENTER_CRITICAL();
 }
 
 void __malloc_unlock(struct _reent *reent)
 {
+    CHECKPOINTB("malloc unlock called!");
     taskEXIT_CRITICAL();
 }
+
+#else
+
+void *malloc(size_t size) 
+{
+    CHECKPOINTA("malloc(%d) called!", size);
+    return pvPortMalloc(size);
+}
+
+void free( void *pv )
+{
+   CHECKPOINTA("free(%x) called!", pv);
+   vPortFree(pv);
+}
+
+void *calloc(size_t nmemb, size_t size)
+{
+    void *ptr = pvPortMalloc(nmemb * size);
+    if (ptr) {
+        memset(ptr, 0, nmemb * size);
+    }
+    CHECKPOINTA("calloc(%d, %d) called!", nmemb, size);
+    return ptr;
+}
+
+void *realloc(void *ptr, size_t size)
+{
+    if (ptr == NULL) {
+        CHECKPOINTA("realloc(NULL, %d) called!", size);
+        return pvPortMalloc(size);
+    }
+    if (size == 0) {
+        CHECKPOINTA("realloc(%x, 0) called!", ptr);
+        vPortFree(ptr);
+        return NULL;
+    }
+    // 获取原分配块大小无法直接实现，简单做法：分配新块，拷贝，释放旧块
+    void *new_ptr = pvPortMalloc(size);
+    if (new_ptr && ptr) {
+        // 注意：这里无法获取原大小，只能假设用户自己保证安全
+        memcpy(new_ptr, ptr, size); // 有风险，如果原ptr比新size大，会导致数据丢失；如果原ptr比新size小，可能会导致内存越界
+    }
+    vPortFree(ptr);
+    CHECKPOINTA("realloc(%x, %d) called!", ptr, size);
+    return new_ptr;
+}
+
+#endif
