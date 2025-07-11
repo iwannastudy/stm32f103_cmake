@@ -6,5 +6,4 @@
         "task.h": "c",
         "common.h": "c"
     },
-    //"C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json"
 }

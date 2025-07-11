@@ -20,11 +20,14 @@
 #include "main.h"
 #include "iwdg.h"
 #include "usart.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "common.h"
+#include "usbd_cdc_if.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,10 +48,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-TaskHandle_t netDeamonTH; 
-TaskHandle_t netconfTH;
 TaskHandle_t systatTH;
 TaskHandle_t watchdogTH;
+TaskHandle_t usbcdcTestTH;
+TaskHandle_t usbcdcRxShowTH;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -114,6 +117,36 @@ void systat_task(void *pvParameters)
         vTaskDelay(5000);
     }
 }
+
+void usb_cdc_test_task(void *pvParameters)
+{
+    (void)pvParameters;
+    const char *msg = "USB CDC Test\r\n";
+    for(;;)
+    {
+        CDC_Transmit_FS((uint8_t*)msg, strlen(msg));
+        vTaskDelay(1000);
+    }
+}
+
+extern uint8_t UserRxBufferFS[];
+extern volatile uint32_t usb_cdc_rx_len;
+
+void usb_cdc_rx_show_task(void *pvParameters)
+{
+    (void)pvParameters;
+    static uint32_t last_rx_len = 0;
+    for(;;)
+    {
+        // TODO: Use a more efficient way to check for new data
+        // This is a simple polling method, which may not be optimal.
+        if(usb_cdc_rx_len > 0 && usb_cdc_rx_len != last_rx_len) {
+            CHECKPOINTA("USB RX: %.*s", usb_cdc_rx_len, UserRxBufferFS);
+            last_rx_len = usb_cdc_rx_len;
+        }
+        vTaskDelay(100);
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -147,6 +180,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_IWDG_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -155,10 +189,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
   xTaskCreate(watchdog_task, "wdg", 64, NULL, SYS_CTRL_PORIRITY, &watchdogTH);
-
-  //xTaskCreate(networkDeamonTask, "networkDeamon", 512, NULL, DEAMON_TASK, &netDeamonTH);
-  
   xTaskCreate(systat_task, "systat", 256, NULL, LOWEST_PORIORIT, &systatTH);
+  xTaskCreate(usb_cdc_test_task, "usbcdc", 128, NULL, LOWEST_PORIORIT, &usbcdcTestTH);
+  xTaskCreate(usb_cdc_rx_show_task, "usbcdc_rx", 128, NULL, LOWEST_PORIORIT, &usbcdcRxShowTH);
 
   vTaskStartScheduler();
 
@@ -179,6 +212,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -190,7 +224,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -205,7 +239,13 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }

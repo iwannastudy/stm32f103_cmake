@@ -4,28 +4,7 @@
             "name": "STM32",
             "compilerPath": "D:\\guntoolchain\\GNU Arm Embedded Toolchain\\10 2020-q4-major\\bin\\arm-none-eabi-gcc.exe",
             "intelliSenseMode": "gcc-arm",
-            "includePath": [
-                "${workspaceFolder}/Core/Inc",
-                "${workspaceFolder}/Drivers/CMSIS/Include",
-                "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F1xx/Include",
-                "${workspaceFolder}/Drivers/STM32F1xx_HAL_Driver/Inc",
-                "${workspaceFolder}/Drivers/STM32F1xx_HAL_Driver/Inc/Legacy",
-                "${workspaceFolder}/FreeRTOS/include",
-                "${workspaceFolder}/FreeRTOS/portable/GCC/ARM_CM3"
-            ],
-            "defines": [
-                "STM32F103xB",
-                "USE_HAL_DRIVER"
-            ],
-            "cStandard": "c11",
-            "cppStandard": "c++11",
-            "browse": {
-                "path": [
-                    "${workspaceFolder}/**"
-                ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
-            }
+            "compileCommands": "${workspaceFolder}/build/Debug/compile_commands.json"
         }
     ],
     "version": 4
