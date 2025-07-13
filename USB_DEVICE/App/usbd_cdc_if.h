@@ -94,8 +94,16 @@
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-extern uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
-extern volatile uint32_t usb_cdc_rx_len;
+
+// 队列句柄声明（供外部任务使用）
+extern void* usb_cdc_rx_queue;
+
+typedef struct {
+    uint8_t *data;
+    uint32_t len;
+    uint8_t slot_idx;
+} usb_rx_msg_t;
+
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
@@ -110,6 +118,9 @@ extern volatile uint32_t usb_cdc_rx_len;
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
+
+// 导出消息结构体和释放函数供外部任务使用
+extern void USB_CDC_RxSlot_Release(uint8_t slot_idx);
 
 /* USER CODE END EXPORTED_FUNCTIONS */
 

@@ -22,7 +22,10 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "common.h"
+#include <string.h>
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -89,12 +92,31 @@
 /* It's up to user to redefine and/or remove those define */
 /** Received data over USB are stored in this buffer      */
 uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
-volatile uint32_t usb_cdc_rx_len = 0;
-
 /** Data to send over USB CDC are stored in this buffer   */
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
+
+QueueHandle_t usb_cdc_rx_queue = NULL; // USB接收队列句柄
+
+// 环形缓冲区参数
+#define USB_RX_SLOT_NUM  4
+#define USB_RX_BUF_SIZE  APP_RX_DATA_SIZE
+
+typedef struct {
+    uint8_t buf[USB_RX_BUF_SIZE];
+    uint32_t len;
+    volatile uint8_t used; // 0:空闲 1:已用
+} usb_rx_slot_t;
+
+
+typedef struct {
+    usb_rx_slot_t slots[USB_RX_SLOT_NUM];
+    uint8_t write_idx;
+    uint8_t read_idx;
+} usb_rx_ring_t;
+
+static usb_rx_ring_t usb_rx_ring = {0};
 
 /* USER CODE END PRIVATE_VARIABLES */
 
@@ -129,6 +151,15 @@ static int8_t CDC_Receive_FS(uint8_t* pbuf, uint32_t *Len);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
 
+// 队列初始化函数，需在主程序初始化时调用
+static void USB_CDC_RxQueue_Init(void)
+{
+    if (usb_cdc_rx_queue == NULL) {
+        usb_cdc_rx_queue = xQueueCreate(USB_RX_SLOT_NUM, sizeof(usb_rx_msg_t));
+    }
+    memset(&usb_rx_ring, 0, sizeof(usb_rx_ring));
+}
+
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
 /**
@@ -151,6 +182,8 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 static int8_t CDC_Init_FS(void)
 {
   /* USER CODE BEGIN 3 */
+  // 初始化USB接收队列
+  USB_CDC_RxQueue_Init();
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
@@ -260,7 +293,29 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-  usb_cdc_rx_len = *Len;
+  if (usb_cdc_rx_queue) {
+      uint8_t idx = usb_rx_ring.write_idx;
+      usb_rx_slot_t *slot = &usb_rx_ring.slots[idx];
+      if (!slot->used) {
+          uint32_t cpylen = (*Len > USB_RX_BUF_SIZE) ? USB_RX_BUF_SIZE : *Len;
+          memcpy(slot->buf, Buf, cpylen);
+          slot->len = cpylen;
+          slot->used = 1;
+          usb_rx_msg_t msg = {
+              .data = slot->buf,
+              .len = cpylen,
+              .slot_idx = idx
+          };
+          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+          xQueueSendFromISR(usb_cdc_rx_queue, &msg, &xHigherPriorityTaskWoken);
+          portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+          usb_rx_ring.write_idx = (idx + 1) % USB_RX_SLOT_NUM;
+      } else {
+          static volatile uint32_t usb_cdc_rx_drop_count = 0;
+          usb_cdc_rx_drop_count++;
+          CHECKPOINTA("USB CDC RX drop! drop_count=%lu", usb_cdc_rx_drop_count);
+      }
+  }
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
@@ -293,6 +348,14 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+
+// 释放环形缓冲区槽（任务处理完后调用）
+void USB_CDC_RxSlot_Release(uint8_t slot_idx)
+{
+    if (slot_idx < USB_RX_SLOT_NUM) {
+        usb_rx_ring.slots[slot_idx].used = 0;
+    }
+}
 
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 

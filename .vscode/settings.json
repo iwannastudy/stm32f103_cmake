@@ -6,4 +6,5 @@
         "task.h": "c",
         "common.h": "c"
     },
+    "cortex-debug.variableUseNaturalFormat": false,
 }

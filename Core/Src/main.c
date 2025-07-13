@@ -28,6 +28,8 @@
 #include "common.h"
 #include "usbd_cdc_if.h"
 #include <string.h>
+// 引入FreeRTOS队列头文件
+#include "queue.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -129,22 +131,22 @@ void usb_cdc_test_task(void *pvParameters)
     }
 }
 
-extern uint8_t UserRxBufferFS[];
-extern volatile uint32_t usb_cdc_rx_len;
-
+// 引入USB消息结构体
+#include "usbd_cdc_if.h"
 void usb_cdc_rx_show_task(void *pvParameters)
 {
     (void)pvParameters;
-    static uint32_t last_rx_len = 0;
+    usb_rx_msg_t msg;
+
     for(;;)
     {
-        // TODO: Use a more efficient way to check for new data
-        // This is a simple polling method, which may not be optimal.
-        if(usb_cdc_rx_len > 0 && usb_cdc_rx_len != last_rx_len) {
-            CHECKPOINTA("USB RX: %.*s", usb_cdc_rx_len, UserRxBufferFS);
-            last_rx_len = usb_cdc_rx_len;
+        if (usb_cdc_rx_queue != NULL && xQueueReceive(usb_cdc_rx_queue, &msg, portMAX_DELAY) == pdPASS) {
+            if(msg.len > 0 && msg.data != NULL) {
+                CHECKPOINTA("USB RX: %.*s", msg.len, msg.data);
+            }
+            // 处理完毕后释放缓冲区槽
+            USB_CDC_RxSlot_Release(msg.slot_idx);
         }
-        vTaskDelay(100);
     }
 }
 /* USER CODE END 0 */
