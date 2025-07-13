@@ -1,12 +1,13 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include "usart.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "event_groups.h"
 #include "semphr.h"
+
+#include "usbd_cdc_if.h"
 
 // system control
 #define SYS_CTRL_PORIRITY           (configMAX_PRIORITIES-1)
@@ -23,16 +24,16 @@
 // tasks that with the lowest
 #define LOWEST_PORIORIT             1
 
-#define CHECKPOINTA(format, ...)    UartPrintf(""format"\r\n", ##__VA_ARGS__)
+#define CHECKPOINTA(format, ...)    UsbPrintf(""format"\r\n", ##__VA_ARGS__)
 
 #ifdef DBG_B
 #define CHECKPOINTB(format, ...)    
-                                    UartPrintf(""__FILE__", line:%d, %s(): "format"\r\n", __LINE__, __func__, ##__VA_ARGS__)
+                                    UsbPrintf(""__FILE__", line:%d, %s(): "format"\r\n", __LINE__, __func__, ##__VA_ARGS__)
 #else
 #define CHECKPOINTB(...)
 #endif
 
-#define ERRORPOINT(format, ...)     UartPrintf("%s(): ERROR:"format"\r\n", __func__, ##__VA_ARGS__)
+#define ERRORPOINT(format, ...)     UsbPrintf("%s(): ERROR:"format"\r\n", __func__, ##__VA_ARGS__)
 
 
 

@@ -28,8 +28,13 @@
 #include "common.h"
 #include "usbd_cdc_if.h"
 #include <string.h>
+
 // 引入FreeRTOS队列头文件
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
 #include "queue.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,9 +55,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+TaskHandle_t startTH;
 TaskHandle_t systatTH;
 TaskHandle_t watchdogTH;
-TaskHandle_t usbcdcTestTH;
 TaskHandle_t usbcdcRxShowTH;
 /* USER CODE END PV */
 
@@ -64,6 +69,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 void watchdog_task(void *pvParameters)
 {
     (void)pvParameters; // Suppress unused parameter warning
@@ -120,23 +126,13 @@ void systat_task(void *pvParameters)
     }
 }
 
-void usb_cdc_test_task(void *pvParameters)
-{
-    (void)pvParameters;
-    const char *msg = "USB CDC Test\r\n";
-    for(;;)
-    {
-        CDC_Transmit_FS((uint8_t*)msg, strlen(msg));
-        vTaskDelay(1000);
-    }
-}
-
-// 引入USB消息结构体
-#include "usbd_cdc_if.h"
-void usb_cdc_rx_show_task(void *pvParameters)
+void usb_cdc_rx_task(void *pvParameters)
 {
     (void)pvParameters;
     usb_rx_msg_t msg;
+
+    // 初始化USB接收队列
+    USB_CDC_RxQueue_Init();
 
     for(;;)
     {
@@ -148,6 +144,15 @@ void usb_cdc_rx_show_task(void *pvParameters)
             USB_CDC_RxSlot_Release(msg.slot_idx);
         }
     }
+}
+
+void start_task(void *pvParameters)
+{
+    xTaskCreate(watchdog_task, "wdg", 64, NULL, SYS_CTRL_PORIRITY, &watchdogTH);
+    xTaskCreate(systat_task, "systat", 256, NULL, LOWEST_PORIORIT, &systatTH);
+    xTaskCreate(usb_cdc_rx_task, "usbcdc_rx", 256, NULL, USER_INTRA_PORIORITY, &usbcdcRxShowTH);
+    
+    vTaskDelete(NULL);
 }
 /* USER CODE END 0 */
 
@@ -185,18 +190,14 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
+  xTaskCreate(start_task, "start_task", 256, NULL, NORMAL_PORIORIT, &startTH);
+
+  vTaskStartScheduler();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
-  xTaskCreate(watchdog_task, "wdg", 64, NULL, SYS_CTRL_PORIRITY, &watchdogTH);
-  xTaskCreate(systat_task, "systat", 256, NULL, LOWEST_PORIORIT, &systatTH);
-  xTaskCreate(usb_cdc_test_task, "usbcdc", 128, NULL, LOWEST_PORIORIT, &usbcdcTestTH);
-  xTaskCreate(usb_cdc_rx_show_task, "usbcdc_rx", 128, NULL, LOWEST_PORIORIT, &usbcdcRxShowTH);
-
-  vTaskStartScheduler();
-
   while (1)
   {
     /* USER CODE END WHILE */

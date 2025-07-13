@@ -25,7 +25,10 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "common.h"
+
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,6 +101,7 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 /* USER CODE BEGIN PRIVATE_VARIABLES */
 
 QueueHandle_t usb_cdc_rx_queue = NULL; // USB接收队列句柄
+static SemaphoreHandle_t printfMutex = NULL;
 
 // 环形缓冲区参数
 #define USB_RX_SLOT_NUM  4
@@ -152,14 +156,45 @@ static int8_t CDC_Receive_FS(uint8_t* pbuf, uint32_t *Len);
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
 
 // 队列初始化函数，需在主程序初始化时调用
-static void USB_CDC_RxQueue_Init(void)
+void USB_CDC_RxQueue_Init(void)
 {
     if (usb_cdc_rx_queue == NULL) {
         usb_cdc_rx_queue = xQueueCreate(USB_RX_SLOT_NUM, sizeof(usb_rx_msg_t));
     }
     memset(&usb_rx_ring, 0, sizeof(usb_rx_ring));
+
+    if (printfMutex == NULL) {
+        printfMutex = xSemaphoreCreateMutex();
+    }
 }
 
+void UsbPrintf(const char *fmt, ...)
+{
+    va_list vArgs;
+    uint16_t bLen = 0;
+ 
+    if(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)
+    {
+        xSemaphoreTake(printfMutex, portMAX_DELAY);
+    }
+
+    va_start(vArgs, fmt);
+    bLen = vsnprintf((char *)UserTxBufferFS, sizeof(UserTxBufferFS), fmt, vArgs);
+    va_end(vArgs);
+
+    //HAL_UART_Transmit(&huart1, (uint8_t*)print_buff, bLen, 1000);
+    while(CDC_Transmit_FS((uint8_t*)UserTxBufferFS, bLen) == USBD_BUSY) {
+        vTaskDelay(1); // 或适当延时
+    }
+    // while (((USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData)->TxState != 0) {
+    //     vTaskDelay(1);
+    // }
+
+    if(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)
+    {
+        xSemaphoreGive(printfMutex);
+    }
+}
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
 /**
@@ -182,8 +217,6 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 static int8_t CDC_Init_FS(void)
 {
   /* USER CODE BEGIN 3 */
-  // 初始化USB接收队列
-  USB_CDC_RxQueue_Init();
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);

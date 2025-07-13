@@ -21,16 +21,6 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
-#include <stdarg.h>
-#include <stdio.h>
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
-
-
-
-static SemaphoreHandle_t printfMutex = NULL;
 
 /* USER CODE END 0 */
 
@@ -61,11 +51,7 @@ void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
-  printfMutex = xSemaphoreCreateMutex();
-  if(printfMutex == NULL)
-  {
-    Error_Handler();
-  }
+
   /* USER CODE END USART1_Init 2 */
 
 }
@@ -132,26 +118,5 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-void UartPrintf(const char *fmt, ...)
-{
-    va_list vArgs;
-    uint16_t bLen = 0;
-    static char print_buff[1024];
- 
-    if(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)
-    {
-        xSemaphoreTake(printfMutex, portMAX_DELAY);
-    }
 
-    va_start(vArgs, fmt);
-    bLen = vsnprintf(print_buff, sizeof(print_buff), fmt, vArgs);
-    va_end(vArgs);
-
-    HAL_UART_Transmit(&huart1, (uint8_t*)print_buff, bLen, 1000);
-
-    if(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)
-    {
-        xSemaphoreGive(printfMutex);
-    }
-}
 /* USER CODE END 1 */

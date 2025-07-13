@@ -80,8 +80,8 @@
 #endif
 
 //╤оят
-extern void UartPrintf(const char *fmt, ...);
-#define vAssertCalled(char,int) UartPrintf("Error:%s,%d\r\n",char,int)
+extern void UsbPrintf(const char *fmt, ...);
+#define vAssertCalled(char,int) UsbPrintf("Error:%s,%d\r\n",char,int)
 #define configASSERT(x) if((x)==0) vAssertCalled(__FILE__,__LINE__)
 
 /***************************************************************************************************************/

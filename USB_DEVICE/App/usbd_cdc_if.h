@@ -120,8 +120,9 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
 
 // 导出消息结构体和释放函数供外部任务使用
-extern void USB_CDC_RxSlot_Release(uint8_t slot_idx);
-
+void USB_CDC_RxQueue_Init(void);
+void USB_CDC_RxSlot_Release(uint8_t slot_idx);
+void UsbPrintf(const char *fmt, ...);
 /* USER CODE END EXPORTED_FUNCTIONS */
 
 /**
