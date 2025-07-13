@@ -29,6 +29,12 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include "FreeRTOS.h"
+#include "semphr.h"
+
+
+// 互斥锁句柄声明
+static SemaphoreHandle_t printf_mutexHandle = NULL;
 
 
 /* Variables */
@@ -43,6 +49,7 @@ char **environ = __env;
 /* Functions */
 void initialise_monitor_handles()
 {
+  printf_mutexHandle = xSemaphoreCreateMutex();
 }
 
 int _getpid(void)
@@ -82,9 +89,26 @@ __attribute__((weak)) int _write(int file, char *ptr, int len)
   (void)file;
   int DataIdx;
 
+  // 线程安全：加锁
+  if (printf_mutexHandle != NULL) {
+    if (xPortIsInsideInterrupt() == pdFALSE) {
+      if (xSemaphoreTake(printf_mutexHandle, portMAX_DELAY) != pdTRUE) {
+        // 获取失败，直接返回
+        return 0;
+      }
+    }
+  }
+
   for (DataIdx = 0; DataIdx < len; DataIdx++)
   {
     __io_putchar(*ptr++);
+  }
+
+  // 解锁
+  if (printf_mutexHandle != NULL) {
+    if (xPortIsInsideInterrupt() == pdFALSE) {
+      xSemaphoreGive(printf_mutexHandle);
+    }
   }
   return len;
 }

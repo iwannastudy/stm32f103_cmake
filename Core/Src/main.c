@@ -65,10 +65,41 @@ TaskHandle_t usbcdcRxShowTH;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
+void initialise_monitor_handles();
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/**
+ * @brief  Redirect printf to UART
+ * @param  ch: character to send
+ * @retval character sent
+ */
+int __io_putchar(int ch)
+{
+  /* Wait until transmit complete flag is set */
+  while((USART1->SR & UART_FLAG_TC) == 0);
+  
+  /* Send character */
+  USART1->DR = (uint8_t)ch;
+  
+  return ch;
+}
+
+/**
+ * @brief  Redirect scanf from UART (optional)
+ * @retval character received
+ */
+int __io_getchar(void)
+{
+  /* Wait until receive buffer is not empty */
+  while((USART1->SR & UART_FLAG_RXNE) == 0);
+  
+  /* Read character */
+  return (int)(USART1->DR & 0xFF);
+}
 
 void watchdog_task(void *pvParameters)
 {
@@ -162,7 +193,6 @@ void start_task(void *pvParameters)
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -180,7 +210,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  initialise_monitor_handles(); // 初始化监视器句柄，启用printf等调试输出功能
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */

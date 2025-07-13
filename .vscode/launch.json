@@ -24,7 +24,7 @@
         // },
         // 需要安装jlink官方驱动，并将 JLink.exe 的路径添加到系统 PATH 中
         {
-            "name": "Cortex Debug (JLinkGDBServer)",
+            "name": "JLinkGDBServer",
             "cwd": "${workspaceFolder}",
             "executable": "${workspaceFolder}/build/Debug/stm32f103_cmake.elf",
             "request": "launch",
