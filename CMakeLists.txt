@@ -53,8 +53,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
-    ${CMAKE_SOURCE_DIR}/FreeRTOS/include
-    ${CMAKE_SOURCE_DIR}/FreeRTOS/portable/GCC/ARM_CM3
+
 )
 
 # Add project symbols (macros)
@@ -69,10 +68,13 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     # Add user defined libraries
 )
 
-### Rievn cusrom settings
 add_custom_command(
     TARGET ${CMAKE_PROJECT_NAME}
     POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} -O binary ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.bin
     COMMENT "Converting ELF to binary file"
 )
+
+# Add the map file to the list of files to be removed with 'clean' target
+set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES ADDITIONAL_CLEAN_FILES 
+                        "${CMAKE_PROJECT_NAME}.map;${CMAKE_PROJECT_NAME}.bin")

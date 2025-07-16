@@ -2,13 +2,11 @@ cmake_minimum_required(VERSION 3.22)
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
 
-# STM32CubeMX generated include paths
-include_directories(
+set(OS_Inc
     ${CMAKE_SOURCE_DIR}/FreeRTOS/include
     ${CMAKE_SOURCE_DIR}/FreeRTOS/portable/GCC/ARM_CM3
 )
 
-# STM32CubeMX generated application sources
 set(OS_Common_Src
     ${CMAKE_SOURCE_DIR}/FreeRTOS/croutine.c
     ${CMAKE_SOURCE_DIR}/FreeRTOS/event_groups.c
@@ -18,13 +16,10 @@ set(OS_Common_Src
     ${CMAKE_SOURCE_DIR}/FreeRTOS/timers.c
 )
 
-# STM32 HAL/LL Drivers
 set(OS_Port_Src
     ${CMAKE_SOURCE_DIR}/FreeRTOS/portable/GCC/ARM_CM3/port.c
     ${CMAKE_SOURCE_DIR}/FreeRTOS/portable/MemMang/heap_4.c
 )
-
-# Drivers Midllewares
 
 
 
@@ -41,6 +36,7 @@ set(OS_LINK_LIBS
 # Create FreeRTOS static library
 add_library(FreeRTOS OBJECT)
 target_sources(FreeRTOS PRIVATE ${OS_Port_Src} ${OS_Common_Src})
+target_include_directories(FreeRTOS PUBLIC ${OS_Inc})
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE ${MX_LINK_DIRS})

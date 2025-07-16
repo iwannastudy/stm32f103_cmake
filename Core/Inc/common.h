@@ -24,7 +24,11 @@
 // tasks that with the lowest
 #define LOWEST_PORIORIT             1
 
+#ifdef DBG_A
 #define CHECKPOINTA(format, ...)    UsbPrintf(""format"\r\n", ##__VA_ARGS__)
+#else
+#define CHECKPOINTA(...)
+#endif
 
 #ifdef DBG_B
 #define CHECKPOINTB(format, ...)    
